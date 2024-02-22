@@ -43,8 +43,8 @@ public class ColorCommand extends SlashCommand {
 		if (role == null) return;
 		Member member = event.getMember();
 		if (member == null) return;
-		member.getRoles().stream().filter(memberRole -> colors.values().stream()
-						.anyMatch(colorId -> colorId.equals(memberRole.getId())))
+		member.getRoles().stream()
+				.filter(memberRole -> colors.values().stream().anyMatch(colorId -> colorId.equals(memberRole.getId())))
 				.forEach(roleToRemove -> guild.removeRoleFromMember(member, roleToRemove).complete());
 		guild.addRoleToMember(member, role).queue();
 		event.reply(String.format("Your color changed to %s (%s)", role.getAsMention(), name)).setEphemeral(true).queue();
