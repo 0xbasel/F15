@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 public class ColorCommand extends SlashCommand {
 	private final Map<String, String> colors = Map.of(
-			"BLUE", "1210154587240267826",
-			"GREEN", "1210154545930575922"
+			"BLUE", "1196549409345900706",
+			"GREEN", "1196549788938809437"
 	);
 
 	public ColorCommand() {
@@ -44,8 +44,8 @@ public class ColorCommand extends SlashCommand {
 		Member member = event.getMember();
 		if (member == null) return;
 		member.getRoles().stream()
-				.filter(memberRole -> colors.values().stream().anyMatch(colorId -> colorId.equals(memberRole.getId())))
-				.forEach(roleToRemove -> guild.removeRoleFromMember(member, roleToRemove).complete());
+				.filter(memberRole -> colors.values().stream().anyMatch(colorId -> !memberRole.equals(role) && colorId.equals(memberRole.getId())))
+				.forEach(roleToRemove -> guild.removeRoleFromMember(member, roleToRemove).queue());
 		guild.addRoleToMember(member, role).queue();
 		event.reply(String.format("Your color changed to %s (%s)", role.getAsMention(), name)).setEphemeral(true).queue();
 	}
