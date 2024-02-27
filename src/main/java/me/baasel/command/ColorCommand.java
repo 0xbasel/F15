@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 public class ColorCommand extends SlashCommand {
 	private final Map<String, String> colors = Map.of(
 			"BLUE", "1210154587240267826",
-			"GREEN", "1210154545930575922"
+			"GREEN", "1210154545930575922",
+			"RED", "1212154752721231942"
 	);
 
 	public ColorCommand() {
