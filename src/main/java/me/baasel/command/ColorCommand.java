@@ -11,16 +11,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class ColorCommand extends SlashCommand {
-	private final Map<String, String> colors = Map.of(
-			"BLUE", "1210154587240267826",
-			"GREEN", "1210154545930575922",
-			"RED", "1212154752721231942"
-	);
-
 	public ColorCommand() {
 		this.name = "color";
 		this.help = "Changes your color";
@@ -30,30 +23,44 @@ public class ColorCommand extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
 		if (!event.isFromGuild()) return;
+
 		OptionMapping option = event.getOption("name");
 		if (option == null) return;
-		String name = option.getAsString().toUpperCase();
-		String roleId = colors.get(name);
-		if (roleId == null) {
-			event.reply(name + " not found.").setEphemeral(true).queue();
-			return;
-		}
+
+		String colorName = option.getAsString().toUpperCase();
+
 		Guild guild = event.getGuild();
 		if (guild == null) return;
-		Role role = guild.getRoleById(roleId);
-		if (role == null) return;
+
+		List<Role> roles = guild.getRoles();
+		List<Role> colorRoles = roles.stream().filter(r -> r.getName().startsWith("COLOR_")).toList();
+		List<Role> colorRolesByColorName = colorRoles.stream().filter(r -> r.getName().endsWith(colorName)).toList();
+		if (colorRolesByColorName.isEmpty()) return;
+
+		Role colorRole = colorRolesByColorName.get(0);
+
 		Member member = event.getMember();
 		if (member == null) return;
-		member.getRoles().stream()
-				.filter(memberRole -> !memberRole.equals(role) && colors.values().stream().anyMatch(colorId -> colorId.equals(memberRole.getId())))
-				.forEach(roleToRemove -> guild.removeRoleFromMember(member, roleToRemove).queue());
-		guild.addRoleToMember(member, role).queue();
-		event.reply(String.format("Your color changed to %s (%s)", role.getAsMention(), name)).setEphemeral(true).queue();
+
+		List<Role> rolesToRemove = member.getRoles().stream().filter(colorRoles::contains).toList();
+		rolesToRemove.forEach(role -> guild.removeRoleFromMember(member, role).complete());
+
+		guild.addRoleToMember(member, colorRole).queue();
+
+		event.reply(String.format("Your color changed to %s (%s)", colorRole.getAsMention(), colorName)).setEphemeral(true).queue();
 	}
 
 	@Override
 	public void onAutoComplete(CommandAutoCompleteInteractionEvent event) {
-		event.replyChoiceStrings(colors.keySet().stream()
-				.filter(color -> color.startsWith(event.getFocusedOption().getValue().toUpperCase())).collect(Collectors.toList())).queue();
+		Guild guild = event.getGuild();
+		if (guild == null) return;
+		
+		event.replyChoiceStrings(
+				guild.getRoles().stream()
+						.map(Role::getName)
+						.filter(rName -> rName.startsWith("COLOR_"))
+						.map(rName -> rName.substring("COLOR_".length()))
+						.toList()
+		).queue();
 	}
 }
