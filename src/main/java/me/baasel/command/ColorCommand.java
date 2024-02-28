@@ -32,18 +32,14 @@ public class ColorCommand extends SlashCommand {
 		Guild guild = event.getGuild();
 		if (guild == null) return;
 
-		List<Role> roles = guild.getRoles();
-		List<Role> colorRoles = roles.stream().filter(r -> r.getName().startsWith("COLOR_")).toList();
-		List<Role> colorRolesByColorName = colorRoles.stream().filter(r -> r.getName().endsWith(colorName)).toList();
-		if (colorRolesByColorName.isEmpty()) return;
-
-		Role colorRole = colorRolesByColorName.get(0);
+		Role colorRole = guild.getRoles().stream().filter(r -> r.getName().equals("COLOR_" + colorName)).findFirst().orElse(null);
+		if (colorRole == null) return;
 
 		Member member = event.getMember();
 		if (member == null) return;
 
-		List<Role> colorRolesToRemove = member.getRoles().stream().filter(colorRoles::contains).toList();
-		colorRolesToRemove.forEach(role -> guild.removeRoleFromMember(member, role).complete());
+		List<Role> colorRolesToRemove = member.getRoles().stream().filter(r -> r.getName().startsWith("COLOR_")).toList();
+		colorRolesToRemove.forEach(r -> guild.removeRoleFromMember(member, r).complete());
 
 		guild.addRoleToMember(member, colorRole).queue();
 
