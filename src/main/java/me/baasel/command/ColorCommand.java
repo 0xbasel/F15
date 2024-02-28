@@ -24,10 +24,10 @@ public class ColorCommand extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
 		if (!event.isFromGuild()) return;
 
-		OptionMapping option = event.getOption("name");
-		if (option == null) return;
+		OptionMapping colorNameOption = event.getOption("name");
+		if (colorNameOption == null) return;
 
-		String colorName = option.getAsString().toUpperCase();
+		String colorName = colorNameOption.getAsString().toUpperCase();
 
 		Guild guild = event.getGuild();
 		if (guild == null) return;
@@ -42,8 +42,8 @@ public class ColorCommand extends SlashCommand {
 		Member member = event.getMember();
 		if (member == null) return;
 
-		List<Role> rolesToRemove = member.getRoles().stream().filter(colorRoles::contains).toList();
-		rolesToRemove.forEach(role -> guild.removeRoleFromMember(member, role).complete());
+		List<Role> colorRolesToRemove = member.getRoles().stream().filter(colorRoles::contains).toList();
+		colorRolesToRemove.forEach(role -> guild.removeRoleFromMember(member, role).complete());
 
 		guild.addRoleToMember(member, colorRole).queue();
 
@@ -54,7 +54,7 @@ public class ColorCommand extends SlashCommand {
 	public void onAutoComplete(CommandAutoCompleteInteractionEvent event) {
 		Guild guild = event.getGuild();
 		if (guild == null) return;
-		
+
 		event.replyChoiceStrings(
 				guild.getRoles().stream()
 						.map(Role::getName)
