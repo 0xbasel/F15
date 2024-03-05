@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class ColorCommand extends SlashCommand {
+
 	public ColorCommand() {
 		this.name = "color";
 		this.help = "Changes your color";
@@ -32,13 +33,18 @@ public class ColorCommand extends SlashCommand {
 		Guild guild = event.getGuild();
 		if (guild == null) return;
 
-		Role colorRole = guild.getRoles().stream().filter(r -> r.getName().equals("COLOR_" + colorName)).findFirst().orElse(null);
+		Role colorRole = guild.getRoles().stream()
+				.filter(r -> r.getName().equals("COLOR_" + colorName))
+				.findFirst()
+				.orElse(null);
 		if (colorRole == null) return;
 
 		Member member = event.getMember();
 		if (member == null) return;
 
-		List<Role> colorRolesToRemove = member.getRoles().stream().filter(r -> r.getName().startsWith("COLOR_")).toList();
+		List<Role> colorRolesToRemove = member.getRoles().stream()
+				.filter(r -> r.getName().startsWith("COLOR_"))
+				.toList();
 		colorRolesToRemove.forEach(r -> guild.removeRoleFromMember(member, r).complete());
 
 		guild.addRoleToMember(member, colorRole).queue();
@@ -51,12 +57,11 @@ public class ColorCommand extends SlashCommand {
 		Guild guild = event.getGuild();
 		if (guild == null) return;
 
-		event.replyChoiceStrings(
-				guild.getRoles().stream()
-						.map(Role::getName)
-						.filter(rName -> rName.startsWith("COLOR_"))
-						.map(rName -> rName.substring("COLOR_".length()))
-						.toList()
+		event.replyChoiceStrings(guild.getRoles().stream()
+				.map(Role::getName)
+				.filter(rName -> rName.startsWith("COLOR_"))
+				.map(rName -> rName.substring("COLOR_".length()))
+				.toList()
 		).queue();
 	}
 }
