@@ -18,7 +18,7 @@ public class GhostPingListener extends ListenerAdapter {
 
 	@Override
 	public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-		if (!event.isFromGuild() && event.getAuthor().isBot()) return;
+		if (!event.isFromGuild() || event.getAuthor().isBot()) return;
 		
 		Message message = event.getMessage();
 		if (message.getMentions().getUsers().isEmpty()) return;
