@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ColorCommand extends SlashCommand {
 
@@ -44,7 +45,7 @@ public class ColorCommand extends SlashCommand {
 
 		List<Role> colorRolesToRemove = member.getRoles().stream()
 				.filter(r -> r.getName().startsWith("COLOR_"))
-				.toList();
+				.collect(Collectors.toList());
 		colorRolesToRemove.forEach(r -> guild.removeRoleFromMember(member, r).complete());
 
 		guild.addRoleToMember(member, colorRole).queue();
@@ -61,7 +62,7 @@ public class ColorCommand extends SlashCommand {
 				.map(Role::getName)
 				.filter(rName -> rName.startsWith("COLOR_"))
 				.map(rName -> rName.substring("COLOR_".length()))
-				.toList()
+				.collect(Collectors.toList())
 		).queue();
 	}
 }

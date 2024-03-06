@@ -1,5 +1,7 @@
 package me.baasel.listener;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import me.baasel.Util;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -19,7 +21,7 @@ public class GhostPingListener extends ListenerAdapter {
 	@Override
 	public void onMessageReceived(@NotNull MessageReceivedEvent event) {
 		if (!event.isFromGuild() || event.getAuthor().isBot()) return;
-		
+
 		Message message = event.getMessage();
 		if (message.getMentions().getUsers().isEmpty()) return;
 
@@ -33,10 +35,10 @@ public class GhostPingListener extends ListenerAdapter {
 		if (!messageCache.containsKey(messageId)) return;
 
 		CachedMessage cachedMessage = messageCache.get(messageId);
-		Message message = cachedMessage.message;
+		Message message = cachedMessage.getMessage();
 		if (message.getMentions().getUsers().isEmpty()) return;
 
-		User author = cachedMessage.author;
+		User author = cachedMessage.getAuthor();
 		String mentionedUsers = message.getMentions().getUsers().stream()
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
@@ -44,6 +46,12 @@ public class GhostPingListener extends ListenerAdapter {
 		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUsers))).queue();
 	}
 
-	private record CachedMessage(Message message, User author) {
+	@Getter
+	@RequiredArgsConstructor
+	private static class CachedMessage {
+
+		private final Message message;
+		private final User author;
+
 	}
 }
