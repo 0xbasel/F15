@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -20,10 +21,14 @@ public class GhostPingListener extends ListenerAdapter {
 
 	@Override
 	public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-		if (!event.isFromGuild() || event.getAuthor().isBot()) return;
+		User author = event.getAuthor();
+		if (!event.isFromGuild() || author.isBot()) return;
 
 		Message message = event.getMessage();
-		if (message.getMentions().getUsers().isEmpty()) return;
+		List<User> mentionedUsers = message.getMentions().getUsers();
+		if (mentionedUsers.isEmpty()) return;
+
+		if (mentionedUsers.size() == 1 && mentionedUsers.get(0).equals(author)) return;
 
 		CachedMessage cachedMessage = new CachedMessage(message, event.getAuthor());
 		messageCache.put(message.getIdLong(), cachedMessage);
