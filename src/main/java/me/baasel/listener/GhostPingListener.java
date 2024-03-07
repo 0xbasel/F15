@@ -47,7 +47,7 @@ public class GhostPingListener extends ListenerAdapter {
 
 		List<User> mentionedUsers = cachedMessage.getMentionedUsers();
 
-		if (mentionedUsers.size() == 1 && mentionedUsers.get(0).equals(cachedMessage.getAuthor())) {
+		if (mentionedUsers.isEmpty() || (mentionedUsers.size() == 1 && mentionedUsers.get(0).equals(cachedMessage.getAuthor()))) {
 			messageCache.remove(messageId);
 			return;
 		}
@@ -57,7 +57,9 @@ public class GhostPingListener extends ListenerAdapter {
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
 
-		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUserStr))).queue();
+		if (!mentionedUserStr.isEmpty()) {
+			event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUserStr))).queue();
+		}
 
 		messageCache.remove(messageId);
 	}
