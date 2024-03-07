@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,14 +42,43 @@ public class GhostPingListener extends ListenerAdapter {
 
 		CachedMessage cachedMessage = messageCache.get(messageId);
 		Message message = cachedMessage.getMessage();
-		if (message.getMentions().getUsers().isEmpty()) return;
-
 		User author = cachedMessage.getAuthor();
+
 		String mentionedUsers = message.getMentions().getUsers().stream()
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
 
 		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUsers))).queue();
+
+		messageCache.remove(messageId);
+	}
+
+	@Override
+	public void onMessageUpdate(@NotNull MessageUpdateEvent event) {
+		long messageId = event.getMessageIdLong();
+		if (!messageCache.containsKey(messageId)) return;
+
+		Message updatedMessage = event.getMessage();
+		CachedMessage cachedMessage = messageCache.get(messageId);
+		Message originalMessage = cachedMessage.getMessage();
+
+		List<User> originalMentions = originalMessage.getMentions().getUsers();
+		List<User> updatedMentions = updatedMessage.getMentions().getUsers();
+
+		List<User> removedMentions = originalMentions.stream()
+				.filter(user -> !updatedMentions.contains(user))
+				.collect(Collectors.toList());
+
+		if (!removedMentions.isEmpty()) {
+			User author = cachedMessage.getAuthor();
+			String mentionedUsers = removedMentions.stream()
+					.map(user -> user.getName() + " (" + user.getId() + ")")
+					.collect(Collectors.joining(", "));
+
+			event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Removed Mention(s): %s", author.getName(), author.getId(), mentionedUsers))).queue();
+		}
+
+		messageCache.remove(messageId);
 	}
 
 	@Getter
