@@ -1,7 +1,7 @@
 package me.baasel.listener;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import me.baasel.Util;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,29 +27,37 @@ public class GhostPingListener extends ListenerAdapter {
 		if (!event.isFromGuild() || author.isBot()) return;
 
 		Message message = event.getMessage();
-		List<User> mentionedUsers = message.getMentions().getUsers();
+		List<User> mentionedUsers = message.getMentions().getUsers().stream()
+				.filter(user -> !user.isBot())
+				.collect(Collectors.toList());
+
 		if (mentionedUsers.isEmpty()) return;
 
 		if (mentionedUsers.size() == 1 && mentionedUsers.get(0).equals(author)) return;
 
-		CachedMessage cachedMessage = new CachedMessage(message, event.getAuthor());
+		CachedMessage cachedMessage = new CachedMessage(message, author);
 		messageCache.put(message.getIdLong(), cachedMessage);
 	}
 
 	@Override
 	public void onMessageDelete(@NotNull MessageDeleteEvent event) {
 		long messageId = event.getMessageIdLong();
-		if (!messageCache.containsKey(messageId)) return;
-
 		CachedMessage cachedMessage = messageCache.get(messageId);
-		Message message = cachedMessage.getMessage();
-		User author = cachedMessage.getAuthor();
+		if (cachedMessage == null) return;
 
-		String mentionedUsers = message.getMentions().getUsers().stream()
+		List<User> mentionedUsers = cachedMessage.getMentionedUsers();
+
+		if (mentionedUsers.size() == 1 && mentionedUsers.get(0).equals(cachedMessage.getAuthor())) {
+			messageCache.remove(messageId);
+			return;
+		}
+
+		User author = cachedMessage.getAuthor();
+		String mentionedUserStr = mentionedUsers.stream()
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
 
-		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUsers))).queue();
+		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUserStr))).queue();
 
 		messageCache.remove(messageId);
 	}
@@ -56,18 +65,21 @@ public class GhostPingListener extends ListenerAdapter {
 	@Override
 	public void onMessageUpdate(@NotNull MessageUpdateEvent event) {
 		long messageId = event.getMessageIdLong();
-		if (!messageCache.containsKey(messageId)) return;
-
-		Message updatedMessage = event.getMessage();
 		CachedMessage cachedMessage = messageCache.get(messageId);
-		Message originalMessage = cachedMessage.getMessage();
+		if (cachedMessage == null) return;
 
-		List<User> originalMentions = originalMessage.getMentions().getUsers();
-		List<User> updatedMentions = updatedMessage.getMentions().getUsers();
+		List<User> updatedMentions = event.getMessage().getMentions().getUsers().stream()
+				.filter(user -> !user.isBot())
+				.collect(Collectors.toList());
 
+		List<User> originalMentions = new ArrayList<>(cachedMessage.getMentionedUsers());
 		List<User> removedMentions = originalMentions.stream()
 				.filter(user -> !updatedMentions.contains(user))
 				.collect(Collectors.toList());
+
+		cachedMessage.setMentionedUsers(updatedMentions);
+
+		if (removedMentions.size() == 1 && removedMentions.contains(cachedMessage.getAuthor())) return;
 
 		if (!removedMentions.isEmpty()) {
 			User author = cachedMessage.getAuthor();
@@ -77,16 +89,22 @@ public class GhostPingListener extends ListenerAdapter {
 
 			event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Removed Mention(s): %s", author.getName(), author.getId(), mentionedUsers))).queue();
 		}
-
-		messageCache.remove(messageId);
 	}
 
-	@Getter
-	@RequiredArgsConstructor
-	private static class CachedMessage {
 
+	@Getter
+	@Setter
+	private static class CachedMessage {
 		private final Message message;
 		private final User author;
+		private List<User> mentionedUsers;
 
+		public CachedMessage(Message message, User author) {
+			this.message = message;
+			this.author = author;
+			this.mentionedUsers = message.getMentions().getUsers().stream()
+					.filter(user -> !user.isBot())
+					.collect(Collectors.toList());
+		}
 	}
 }
