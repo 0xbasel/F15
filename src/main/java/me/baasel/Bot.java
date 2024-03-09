@@ -12,7 +12,7 @@ public class Bot {
 	public static void main(String[] args) {
 		CommandClient commandClient = new CommandClientBuilder()
 				.setActivity(Activity.watching("F15 members"))
-				.setOwnerId("647887379981402118")
+				.setOwnerId(647887379981402118L)
 				.addSlashCommands(
 						new ColorCommand()
 				).build();
