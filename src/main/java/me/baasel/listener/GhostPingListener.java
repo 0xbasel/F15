@@ -1,7 +1,8 @@
 package me.baasel.listener;
 
-import me.baasel.Util;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -51,7 +52,15 @@ public class GhostPingListener extends ListenerAdapter {
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
 
-		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Mentioned Users: %s%n", author.getName(), author.getId(), mentionedUsersStr))).queue();
+		MessageEmbed embed = new EmbedBuilder()
+				.setTitle("Ghost Ping Detected!")
+				.setColor(0xFF0000)
+				.addField(new MessageEmbed.Field("Message ID", messageId + "", true))
+				.addField(new MessageEmbed.Field("Author", author.getName(), true))
+				.addField(new MessageEmbed.Field("Mentioned User(s)", mentionedUsersStr, false))
+				.build();
+
+		event.getChannel().sendMessageEmbeds(embed).queue();
 
 		messageCache.remove(messageId);
 	}
@@ -75,11 +84,19 @@ public class GhostPingListener extends ListenerAdapter {
 		if (removedMentions.isEmpty()) return;
 
 		User author = cachedMessage.getAuthor();
-		String mentionedUsersStr = removedMentions.stream()
+		String removedMentionsStr = removedMentions.stream()
 				.map(user -> user.getName() + " (" + user.getId() + ")")
 				.collect(Collectors.joining(", "));
 
-		event.getChannel().sendMessageEmbeds(Util.redEmbed(String.format("Ghost ping detected! Author: %s (%s), Removed Mention(s): %s", author.getName(), author.getId(), mentionedUsersStr))).queue();
+		MessageEmbed embed = new EmbedBuilder()
+				.setTitle("Ghost Ping Detected!")
+				.setColor(0xFF0000)
+				.addField(new MessageEmbed.Field("Message ID", messageId + "", true))
+				.addField(new MessageEmbed.Field("Author", author.getName(), true))
+				.addField(new MessageEmbed.Field("Removed User(s)", removedMentionsStr, false))
+				.build();
+
+		event.getChannel().sendMessageEmbeds(embed).queue();
 
 		messageCache.put(messageId, message);
 	}

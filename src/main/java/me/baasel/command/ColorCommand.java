@@ -1,36 +1,31 @@
 package me.baasel.command;
 
-import com.jagrosh.jdautilities.command.SlashCommand;
-import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ColorCommand extends SlashCommand {
-
-	public ColorCommand() {
-		this.name = "color";
-		this.help = "Changes your color";
-		this.options = Collections.singletonList(new OptionData(OptionType.STRING, "name", "Type color name", true, true));
-	}
-
+public class ColorCommand extends ListenerAdapter {
 	@Override
-	protected void execute(SlashCommandEvent event) {
+	public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
 		if (!event.isFromGuild()) return;
+		if (!event.getName().equals("color")) return;
 
-		OptionMapping colorNameOption = event.getOption("name");
-		if (colorNameOption == null) return;
+		event.deferReply().queue();
 
-		String colorName = colorNameOption.getAsString().toUpperCase();
+		OptionMapping colorOption = event.getOption("name");
+		if (colorOption == null) return;
 
+		String colorName = colorOption.getAsString().toUpperCase();
 		Guild guild = event.getGuild();
 		if (guild == null) return;
 
@@ -50,11 +45,18 @@ public class ColorCommand extends SlashCommand {
 
 		guild.addRoleToMember(member, colorRole).queue();
 
-		event.reply(String.format("Your color changed to %s (%s)", colorRole.getAsMention(), colorName)).setEphemeral(true).queue();
+		MessageEmbed embed = new EmbedBuilder()
+				.setDescription(String.format("Your color changed to %s", colorName))
+				.setColor(colorRole.getColor())
+				.build();
+
+		event.getHook().editOriginalEmbeds(embed).queue();
 	}
 
 	@Override
-	public void onAutoComplete(CommandAutoCompleteInteractionEvent event) {
+	public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+		if (!event.getName().equals("color") && !event.getFocusedOption().getName().equals("name")) return;
+
 		Guild guild = event.getGuild();
 		if (guild == null) return;
 
