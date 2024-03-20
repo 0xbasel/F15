@@ -49,7 +49,7 @@ public class GhostPingListener extends ListenerAdapter {
 
 		User author = cachedMessage.getAuthor();
 		String mentionedUsersStr = mentionedUsers.stream()
-				.map(user -> user.getName() + " (" + user.getId() + ")")
+				.map(User::getName)
 				.collect(Collectors.joining(", "));
 
 		MessageEmbed embed = new EmbedBuilder()
@@ -58,6 +58,7 @@ public class GhostPingListener extends ListenerAdapter {
 				.addField(new MessageEmbed.Field("Message ID", messageId + "", true))
 				.addField(new MessageEmbed.Field("Author", author.getName(), true))
 				.addField(new MessageEmbed.Field("Mentioned User(s)", mentionedUsersStr, false))
+				.addField(new MessageEmbed.Field("Message Content", cachedMessage.getContentDisplay(), false))
 				.build();
 
 		event.getChannel().sendMessageEmbeds(embed).queue();
@@ -85,7 +86,7 @@ public class GhostPingListener extends ListenerAdapter {
 
 		User author = cachedMessage.getAuthor();
 		String removedMentionsStr = removedMentions.stream()
-				.map(user -> user.getName() + " (" + user.getId() + ")")
+				.map(User::getName)
 				.collect(Collectors.joining(", "));
 
 		MessageEmbed embed = new EmbedBuilder()
@@ -94,9 +95,10 @@ public class GhostPingListener extends ListenerAdapter {
 				.addField(new MessageEmbed.Field("Message ID", messageId + "", true))
 				.addField(new MessageEmbed.Field("Author", author.getName(), true))
 				.addField(new MessageEmbed.Field("Removed User(s)", removedMentionsStr, false))
+				.addField(new MessageEmbed.Field("Message Content", cachedMessage.getContentDisplay(), false))
 				.build();
 
-		event.getChannel().sendMessageEmbeds(embed).queue();
+		cachedMessage.replyEmbeds(embed).queue();
 
 		messageCache.put(messageId, message);
 	}
